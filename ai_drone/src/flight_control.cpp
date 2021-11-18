@@ -176,14 +176,15 @@ int main(int argc, char **argv)
             // mode2 (start -> line tracking)
             else if(error_vars.mode == 2){
             initial = 1;
+            iter=0;
 
-              e_b = error_vars.y_data*K_P + (error_vars.y_data - y_data_old) * K_D/0.02 + K_I*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
-              e_theta = -(error_vars.theta_data*K_P + (error_vars.theta_data - theta_data_old) * K_D/0.02 + K_I*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
+              e_b = error_vars.y_data*0.00001 + (error_vars.y_data - y_data_old) * 0.00001/0.02 + 0.003*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+              e_theta = -(error_vars.theta_data*0.006 + (error_vars.theta_data - theta_data_old) * 0.0002/0.02 + 0.017*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
           
-              theta = theta + e_theta;
+              theta = e_theta;
 
-              pose.pose.position.x = cos(theta)*(a + 0.02) + -sin(theta)*e_b;
-              pose.pose.position.y = sin(theta)*(a + 0.02) + cos(theta)*e_b;
+              pose.pose.position.x = cos(theta)*(a) + -sin(theta)*(b + e_b);
+              pose.pose.position.y = sin(theta)*(a) + cos(theta)*(b + e_b);
 
               q_x = sin(theta/2.0)*cos(rot_beta_x);     
               q_y = sin(theta/2.0)*cos(rot_beta_y);
@@ -202,11 +203,36 @@ int main(int argc, char **argv)
               d_error_old_theta = (error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta;
 
 
-              a = a+ 0.02;
+              a = a + 0.01;
 
             }
             else if(error_vars.mode == 3){
-            initial = 1;  
+            initial = 1;
+
+            iter = iter+1;
+ 
+             if (iter == 1){
+               a = e_a;
+               b = e_b;
+               e_a = 0;
+               e_b = 0;
+
+              }  
+
+             pose.pose.position.x = cos(theta)*(a) + -sin(theta)*e_b;
+             pose.pose.position.y = sin(theta)*(a) + cos(theta)*e_b;
+
+              q_x = sin(theta/2.0)*cos(rot_beta_x);     
+              q_y = sin(theta/2.0)*cos(rot_beta_y);
+              q_z = sin(theta/2.0)*cos(rot_beta_z);
+              q_w = cos(theta/2.0);
+
+              pose.pose.orientation.x = q_x;
+              pose.pose.orientation.y = q_y;
+              pose.pose.orientation.z = q_z;
+              pose.pose.orientation.w = q_w;
+
+           
             }
             else if(error_vars.mode == 4){
             initial = 1;  
@@ -233,7 +259,7 @@ int main(int argc, char **argv)
                pose.pose.orientation.z = q_z;
                pose.pose.orientation.w = q_w;
 
-               a = a+ 0.02;
+               a = a+ 0.01;
              }else{ }
                             
  
