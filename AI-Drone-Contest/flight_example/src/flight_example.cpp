@@ -6,7 +6,7 @@
 
 double r=5.0;
 double theta;
-double count=0.0;
+int iter=0;
 double wn=0.314159;
 double v=1.0;
 
@@ -39,8 +39,7 @@ int main(int argc, char **argv)
     }
 
     geometry_msgs::PoseStamped pose;
-    pose.pose.position.x = 0;
-    pose.pose.position.y = 0;
+   
     pose.pose.position.z = 2;
 
     //send a few setpoints before starting
@@ -78,46 +77,18 @@ int main(int argc, char **argv)
             }
         }
 
-          
-	   if (count <= 500 ){
-
-            pose.pose.position.x = 0;
-    	    pose.pose.position.y = 0;
-    	    pose.pose.position.z = 2;
-
-            }
-            else if (count > 500 && count <= 700 ){
-
-            pose.pose.position.x = v*(count-500)*0.05;
-    	    pose.pose.position.y = 0;
-    	    pose.pose.position.z = 2;
-
-            }
-            else if (count > 700 && count <= 900 ){
-
-            theta = wn*(count-700)*0.05;
-
-            pose.pose.position.x = v*200*0.05+r*sin(theta);
-    	    pose.pose.position.y = -r+r*cos(theta);
-    	    pose.pose.position.z = 2;
-
-            }else if (count > 900 && count <1100){
-
-            pose.pose.position.x = v*200*0.05-v*(count-900)*0.05;
-    	    pose.pose.position.y = -2*r;
-    	    pose.pose.position.z = 2;
-                
-            }else if (count >= 1100 && count < 1200){
-
-            pose.pose.position.z = 2;
-
-            }else if (count == 1200){
  
-            pose.pose.position.z = 0;
+    	   
+            pose.pose.position.x = 8.9;
+    	    pose.pose.position.y = 1.1;
+            pose.pose.position.z = 0.9;
 
-	    }
+            pose.pose.orientation.x = 1;
+            pose.pose.orientation.y = 0;
+            pose.pose.orientation.z = 0;
+            pose.pose.orientation.w = 0; 
+	
 
-	  count++;
 
         
 
