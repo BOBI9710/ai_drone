@@ -40,13 +40,28 @@ void error_var::error_Callback(const ai_drone::error_data::ConstPtr& error){
 
 }
 
+class frontd
+{
+  public:
+  int mode4 = 0;
+
+  void front_Callback(const ai_drone::error_data::ConstPtr& frontd);
+};
+
+void frontd::front_Callback(const ai_drone::error_data::ConstPtr& frontd){
+
+  mode4 = frontd->mode_data;
+
+}
+
 int main(int argc, char **argv)
 {
     double a,b=0.0;
     double e_a =0.0;
     double e_b =0.0;
+    double da, db =0;
     double e_theta =0;
-    double K_P = 0.006;
+    double K_P = 0.005;
     double K_D = 0.0002;
     double K_I = 0.017;
     int x_data_old = 40;
@@ -56,11 +71,20 @@ int main(int argc, char **argv)
     double d_error_old_y =0.0;
     double d_error_old_theta =0.0;
     int iter = 0;
+    int iter1 = 0;
+    int iter2 = 0;
+    int iter3 = 0;
+    int iter4 = 0;
     double theta = 0;
+    double phi = 0;
     double rot_alpha = 0;
     double rot_beta_x, rot_beta_y, rot_beta_z = 0;
     double q_x,q_y,q_z,q_w = 0;
+    double theta_add =0;
+    double dist = 0;
     const double pi = 3.14159265359;
+    int mode = 0;
+    int c = 0;
 
     ros::init(argc, argv, "flight_example_node");
     ros::NodeHandle nh;
@@ -77,6 +101,8 @@ int main(int argc, char **argv)
     //subscribe error_data.msg
     error_var error_vars;
     ros::Subscriber error_data_sub = nh.subscribe("error_data_msg",30,&error_var::error_Callback, &error_vars);
+    frontd frontm;
+    ros::Subscriber front_data_sub = nh.subscribe("front_data_msg",30,&frontd::front_Callback, &frontm);
 
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
@@ -152,19 +178,34 @@ int main(int argc, char **argv)
                 pose.pose.orientation.z = q_z;
                 pose.pose.orientation.w = q_w;
               }
- 
-            
+
+            if(theta >= 2*pi){
+                theta = theta - 2*pi;
+              }
+
             // mode1 (spawn -> start)            
-            if (error_vars.mode == 1){ 
-              
+            if (error_vars.mode == 1){            
               initial = 1;
               iter = 0;
+              iter1 = 0;
+              dist = 0;
 
               e_a = error_vars.x_data*K_P + (error_vars.x_data - x_data_old) * K_D/0.02 + K_I*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
-              e_b = error_vars.y_data*K_P + (error_vars.y_data - y_data_old) * K_D/0.02 + K_I*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y); 
+              e_b = error_vars.y_data*K_P + (error_vars.y_data - y_data_old) * K_D/0.02 + K_I*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
 
-              pose.pose.position.x = cos(theta)*e_a + -sin(theta)*e_b;
-              pose.pose.position.y = sin(theta)*e_a + cos(theta)*e_b; 
+              if(c == 1){
+                e_a = 0;
+                e_b = 0;
+              }
+
+              da = dist * cos(theta);
+              db = dist * sin(theta); 
+
+              a = a + da;
+              b = b + db; 
+ 
+              pose.pose.position.x = a + cos(theta)*e_a - sin(theta)*e_b;
+              pose.pose.position.y = b + sin(theta)*e_a + cos(theta)*e_b;
 
               x_data_old = error_vars.x_data;
               y_data_old = error_vars.y_data;
@@ -175,109 +216,220 @@ int main(int argc, char **argv)
             }
             // mode2 (start -> line tracking)
             else if(error_vars.mode == 2){
-            initial = 1;
-            iter=0;
+              initial = 1;
+              iter = 0;
+              iter1 = 0;
+            
+              iter2 = iter2 + 1;
 
-              e_b = error_vars.y_data*0.00001 + (error_vars.y_data - y_data_old) * 0.00001/0.02 + 0.003*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
-              e_theta = -(error_vars.theta_data*0.006 + (error_vars.theta_data - theta_data_old) * 0.0002/0.02 + 0.017*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
+              e_a = error_vars.x_data*0.001 + (error_vars.x_data - x_data_old) * 0.00004/0.02 + 0.003*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
+              e_b = error_vars.y_data*0.001 + (error_vars.y_data - y_data_old) * 0.00004/0.02 + 0.003*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+              e_theta = -(error_vars.theta_data*0.05 + (error_vars.theta_data - theta_data_old) * 0.002/0.02 + 0.02*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
+
+              if(frontm.mode4 == 4){
+                e_a = 0;
+                e_b = 0;
+                e_theta = 0;
+              }
           
-              theta = e_theta;
+              da = dist * cos(theta);
+              db = dist * sin(theta); 
 
-              pose.pose.position.x = cos(theta)*(a) + -sin(theta)*(b + e_b);
-              pose.pose.position.y = sin(theta)*(a) + cos(theta)*(b + e_b);
+              a = a + da;
+              b = b + db; 
 
-              q_x = sin(theta/2.0)*cos(rot_beta_x);     
-              q_y = sin(theta/2.0)*cos(rot_beta_y);
-              q_z = sin(theta/2.0)*cos(rot_beta_z);
-              q_w = cos(theta/2.0);
+              pose.pose.position.x = a + cos(theta)*e_a - sin(theta)*e_b;
+              pose.pose.position.y = b + sin(theta)*e_a + cos(theta)*e_b;
+
+              q_x = sin((theta+e_theta)/2.0)*cos(rot_beta_x);     
+              q_y = sin((theta+e_theta)/2.0)*cos(rot_beta_y);
+              q_z = sin((theta+e_theta)/2.0)*cos(rot_beta_z);
+              q_w = cos((theta+e_theta)/2.0);
 
               pose.pose.orientation.x = q_x;
               pose.pose.orientation.y = q_y;
               pose.pose.orientation.z = q_z;
               pose.pose.orientation.w = q_w;
 
+              x_data_old = error_vars.x_data;
               y_data_old = error_vars.y_data;
+              d_error_old_x = (error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x;
               d_error_old_y = (error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y;
 
               theta_data_old = error_vars.theta_data;
               d_error_old_theta = (error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta;
 
+             if(iter2 >= 5){
+                dist = 0.01;
+              }
 
-              a = a + 0.01;
-
+                if(frontm.mode4 == 4){ // meet obstacle -> go up to 2m and go down
+                    iter4 = iter4 + 1;
+ 
+                  if(iter4 >= 1 && iter4 < 10){
+                       dist = 0;
+                     }
+                   else if(iter4 >= 10){
+                       pose.pose.position.z = 2; 
+                     }
+                   if(iter4 >= 20){
+                       dist = 0.01;
+                     }
+                   if(iter4 >= 350){
+                       pose.pose.position.z = 0.9; 
+                       dist = 0;
+                     }
+                 } 
             }
             else if(error_vars.mode == 3){
-            initial = 1;
+             c = 0;
+             if(frontm.mode4 == 4){
+                
+                }
+             else{
+               initial = 1;
+               iter3 = 0;
+               iter4 = 0;
 
-            iter = iter+1;
+               iter = iter + 1;
+
+               da = da + dist * -sin(theta);
+               db = db + dist * cos(theta);
  
-             if (iter == 1){
-               a = e_a;
-               b = e_b;
-               e_a = 0;
-               e_b = 0;
+               if (iter == 1){
+                 a = a + da;
+                 b = b + db;
+                 e_a = 0;
+                 e_b = 0;
+                 da = 0;
+                 db = 0;
+                 dist = 0;
+                }
 
-              }  
+                pose.pose.position.x = a + da;
+                pose.pose.position.y = b + db;
 
-             pose.pose.position.x = cos(theta)*(a) + -sin(theta)*e_b;
-             pose.pose.position.y = sin(theta)*(a) + cos(theta)*e_b;
+                q_x = sin(theta/2.0)*cos(rot_beta_x);     
+                q_y = sin(theta/2.0)*cos(rot_beta_y);
+                q_z = sin(theta/2.0)*cos(rot_beta_z);
+                q_w = cos(theta/2.0);
 
-              q_x = sin(theta/2.0)*cos(rot_beta_x);     
-              q_y = sin(theta/2.0)*cos(rot_beta_y);
-              q_z = sin(theta/2.0)*cos(rot_beta_z);
-              q_w = cos(theta/2.0);
+                pose.pose.orientation.x = q_x;
+                pose.pose.orientation.y = q_y;
+                pose.pose.orientation.z = q_z;
+                pose.pose.orientation.w = q_w;
 
-              pose.pose.orientation.x = q_x;
-              pose.pose.orientation.y = q_y;
-              pose.pose.orientation.z = q_z;
-              pose.pose.orientation.w = q_w;
-
-           
-            }
-            else if(error_vars.mode == 4){
-            initial = 1;  
-            } 
+              if (iter >= 5){
+                 dist = 0.01;
+                 }
+               }
+             }
             else if(error_vars.mode == -1){ // error tack end -> update position, make error parameter 0 to use again
             initial = 1;
+            iter = 0;
+
+            iter1 = iter1 + 1;
+            c = 1;
+
+              if(iter1 == 1){
+                    a = a + cos(theta)*e_a - sin(theta)*e_b;
+                    b = b + sin(theta)*e_a + cos(theta)*e_b;
+                    e_a = 0;
+                    e_b = 0;
+                 }
+          
+              pose.pose.position.z = 0.9; 
+             }
+            else if(error_vars.mode == -2){ // error tack end -> update position, make error parameter 0 to use again
+            initial = 1;
+            a = 1;
  
-              iter = iter+1;
- 
-             if (iter == 1){
-               a = e_a;
-               b = e_b;
+              iter = iter + 1;
+
+              if (iter == 1){
                e_a = 0;
                e_b = 0;
+               dist = 0;
+              }
+              if(iter >= 30){
 
-              }else if(iter >=20){
-               
+               da = dist * cos(theta);
+               db = dist * sin(theta);
+
+               a = a + da;
+               b = b + db;
+
                pose.pose.position.x = a;
                pose.pose.position.y = b;
-               pose.pose.position.z = 0.9; 
  
                pose.pose.orientation.x = q_x;
                pose.pose.orientation.y = q_y;
                pose.pose.orientation.z = q_z;
                pose.pose.orientation.w = q_w;
 
-               a = a+ 0.01;
-             }else{ }
-                            
+             }
  
+             if(iter >= 40){
+                dist = 0.01;
+             }
+                            
+            } 
+            else if(error_vars.mode == -3){
+            initial = 1;
+
+            iter3 = iter3 + 1;
+
+             da = da + dist * cos(theta);
+             db = db + dist * sin(theta);
+ 
+             if (iter3 == 1){
+               a = a + da;
+               b = b + db;
+               e_a = 0;
+               e_b = 0;
+               da = 0;
+               db = 0;
+               dist = 0;
+
+              }
+
+              theta_add = 0;  
+
+              pose.pose.position.x = a + da;
+              pose.pose.position.y = b + db;
+
+              q_x = sin(theta/2.0)*cos(rot_beta_x);     
+              q_y = sin(theta/2.0)*cos(rot_beta_y);
+              q_z = sin(theta/2.0)*cos(rot_beta_z);
+              q_w = cos(theta/2.0);
+
+              pose.pose.orientation.x = q_x;
+              pose.pose.orientation.y = q_y;
+              pose.pose.orientation.z = q_z;
+              pose.pose.orientation.w = q_w;
+
+              if (iter3 == 30){
+                theta_add =  pi/2;
+                theta = theta + theta_add;
+              }
+              else if (iter3 >= 50){
+                dist = 0.01;  
+              }
+
             }  
             else{ //mode=default;
                     
             }
-      
-            
+  
 
+       if(frontm.mode4 == 4){
+          mode = frontm.mode4;
+       }else{
+          mode = error_vars.mode;
+       }
 
-            //turn yaw 90deg
-            /*pose.pose.orientation.w = 0.7071 ;
-            pose.pose.orientation.x = 0;
-            pose.pose.orientation.y = 0;
-            pose.pose.orientation.z = 0.7071; 
-            */
-         
+        ROS_INFO("mode: %d, theta: %.4f, a: %.2lf, b: %.2lf, da: %.2lf, db: %.2lf, e_theta: %.4lf, e_a: %.2lf, e_b: %.2lf ",mode, theta, a, b, da, db, e_theta, e_a, e_b);
+ 
         local_pos_pub.publish(pose);
 
         ros::spinOnce();

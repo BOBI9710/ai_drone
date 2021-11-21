@@ -17,6 +17,11 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 
 int main(int argc, char **argv)
 {
+
+double q_x,q_y,q_z,q_w = 0;
+double theta = 0;
+double rot_beta_x, rot_beta_y, rot_beta_z = 0;
+
     ros::init(argc, argv, "flight_example_node");
     ros::NodeHandle nh;
 
@@ -77,16 +82,24 @@ int main(int argc, char **argv)
             }
         }
 
- 
+            theta = 90 * 3.14159/180;
+            rot_beta_x = 3.14159/2;
+            rot_beta_y = 3.14159/2;
+            rot_beta_z = 0;
     	   
-            pose.pose.position.x = 8.9;
-    	    pose.pose.position.y = 1.1;
+            pose.pose.position.x = 9;
+    	    pose.pose.position.y = 4;
             pose.pose.position.z = 0.9;
 
-            pose.pose.orientation.x = 1;
-            pose.pose.orientation.y = 0;
-            pose.pose.orientation.z = 0;
-            pose.pose.orientation.w = 0; 
+            q_x = sin(theta/2.0)*cos(rot_beta_x);     
+            q_y = sin(theta/2.0)*cos(rot_beta_y);
+            q_z = sin(theta/2.0)*cos(rot_beta_z);
+            q_w = cos(theta/2.0);
+ 
+            pose.pose.orientation.x = q_x;
+            pose.pose.orientation.y = q_y;
+            pose.pose.orientation.z = q_z;
+            pose.pose.orientation.w = q_w;
 	
 
 

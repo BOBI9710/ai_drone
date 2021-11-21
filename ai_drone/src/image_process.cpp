@@ -15,6 +15,7 @@ using namespace std;
 
 //set variable for drone pose
 int x,y,x_s,y_s;
+int d;
 int iter =0;
 int mode =0;
 float theta_e=0.0;
@@ -50,11 +51,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     img.copyTo(img_houghC);
 	
     vector<Vec3f> circles;
-    HoughCircles(blur_img, circles, CV_HOUGH_GRADIENT, 1, 30, 130, 50, 0, 0);
+    HoughCircles(blur_img, circles, CV_HOUGH_GRADIENT, 1, 30, 130, 50, 0, 100);
 
     //line detection
     vector<Vec2f> lines;
-    HoughLines(canny_img, lines, 1, CV_PI / 180, 105);
+    HoughLines(canny_img, lines, 1, CV_PI / 180, 100);
 
     // circle center detection and move drone to center -> mode 1
     // circle center dectection and land -> mode5
@@ -102,10 +103,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
        
            if(iter >= 50){
             mode = -1;
-           }
-           else{
+           }else{
             mode = 1;
            }
+        
         }else if(circles.size() >= 2){
           // mode 5 landing ; break to ignore situation for one circle detection
         }
@@ -123,14 +124,12 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         putText(img_houghC, status_y , Point(20,230) ,1,1, Scalar(0,0,0), 1,8);
        }
 
-     // line detection and track line -> mode2 
-     // if there is two cross lines(line.size() == 2) detect the cross point and move drone to the point and +90deg yaw. -> mode3
-     // if there is more than 3 lines -> avoidance -> mode4
-
+      // line detection and track line -> mode2 
+      // if dectect parallel lines -> mode3 -> move left for few and yaw + 90deg
+ 
+      if(circles.size() == 0){
         for (size_t j = 0; j < lines.size(); j++ ){
-
-          // show line
-            
+          // show line         
             float rho = lines[j][0], theta = lines[j][1];
 	    Point pt1, pt2;
 	    double a = cos(theta), b = sin(theta);
@@ -170,76 +169,85 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
               rho_avg = lines[0][0];
  
               theta_e = theta_avg; //theta error save
-              y = floor(160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg) / sqrt(1+pow(tan(theta_avg),2))); // y error save
+              d = floor(160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg) / sqrt(1+pow(tan(theta_avg),2))); // d error save
 
               rho_avg = 0;
               theta_avg = 0;
              }
            else if(lines.size() > 1){
 
-               if (lines[0][1] >= 0 && lines[0][1] <= 3.14159){
+               if (lines[0][1] >= 0 && lines[0][1] <= 3.14159/2){
                  theta_avg = lines[0][1];    
                 }
-               else if(lines[0][1] > 3.14159 && lines[0][1]<= 2*3.14159){
-                 theta_avg = lines[0][1]-2*3.14159;
+               else if(lines[0][1] > 3.14159/2 && lines[0][1]<= 3.14159){
+                 theta_avg = lines[0][1]-3.14159;
                 }
 
-              rho_avg = lines[0][0];
+              rho_avg = abs(lines[0][0]);
            
               for(size_t k = 1 ; k < lines.size(); k++){
 
-                 if (lines[k][1] >= 0 && lines[k][1] <= 3.14159){
+                 if (lines[k][1] >= 0 && lines[k][1] <= 3.14159/2){
                  theta_arr = lines[k][1];    
                 }
-                 else if(lines[k][1] > 3.14159 && lines[k][1]<= 2*3.14159){
-                 theta_arr = lines[k][1]-2*3.14159;
+                 else if(lines[k][1] > 3.14159/2 && lines[k][1]<= 3.14159){
+                 theta_arr = lines[k][1]-3.14159;
                 }
                 
                 theta_avg = (theta_avg + theta_arr)/2;
-                rho_avg = (rho_avg + lines[k][0])/2;
+                rho_avg = (rho_avg + abs(lines[k][0]))/2;
                 }
 
               theta_e = theta_avg; //theta error save
-              y = floor(160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg) / sqrt(1+pow(tan(theta_avg),2))); // y error save
+              d = floor(160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg) / sqrt(1+pow(tan(theta_avg),2))); // d error save
 
               rho_avg = 0;
               theta_avg = 0;
-              }
+           }
 
-             x = 0;
+             x = (d + 20) * sin(theta_e);
+             y = (d + 20) * cos(theta_e);
              x_s = 1;
              y_s = 1;
              mode = 2; 
              vert = 0;
              paral = 0;
+             iter = 0;
+           }
+         // paral =! 0 -> if detect parallel lines -> stop -> wait for mode -3
+         else if(paral > 0){ 
+
+           iter = iter +1;
+       
+           if(iter >= 60){
+            mode = -3;
+           }else{
+            mode = 3;
            }
 
-         // paral =! 0 -> mode3
-         else if(paral > 0){
-
-           mode = 3;
            vert = 0;
            paral = 0;
-           }
+         }
     
             char status_theta[30];
             sprintf(status_theta, "theta_e = %.3f",theta_e*180/3.14159);
-            char status_y[30];
-            sprintf(status_y, "y error = %d",y);
+            char status_d[30];
+            sprintf(status_d, "d error = %d",d);
             char status_mode[30];
             sprintf(status_mode, "mode = %d",mode);
 
             //show variable status at cam
             putText(img_houghC, status_mode , Point(20,190) ,1,1, Scalar(0,0,0), 1,8);
             putText(img_houghC, status_theta , Point(20,210) ,1,1, Scalar(0,0,0), 1,8);
-            putText(img_houghC, status_y , Point(20,230) ,1,1, Scalar(0,0,0), 1,8);
+            putText(img_houghC, status_d , Point(20,230) ,1,1, Scalar(0,0,0), 1,8);
   
             } 
+         }
        }
 
      // nothing detected -> start -> line tracking
      if(circles.size() == 0 && lines.size() == 0){ // alt down enough which can't detect the circle -> still move front
-        mode = -1;
+        mode = -2;
         
         char status_mode[30];
         sprintf(status_mode, "mode = %d",mode);
