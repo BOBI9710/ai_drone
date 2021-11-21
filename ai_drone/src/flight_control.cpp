@@ -224,14 +224,8 @@ int main(int argc, char **argv)
 
               e_a = error_vars.x_data*0.001 + (error_vars.x_data - x_data_old) * 0.00004/0.02 + 0.003*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
               e_b = error_vars.y_data*0.001 + (error_vars.y_data - y_data_old) * 0.00004/0.02 + 0.003*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
-              e_theta = -(error_vars.theta_data*0.05 + (error_vars.theta_data - theta_data_old) * 0.002/0.02 + 0.02*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
+              e_theta = -(error_vars.theta_data*0.06 + (error_vars.theta_data - theta_data_old) * 0.002/0.02 + 0.08*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
 
-              if(frontm.mode4 == 4){
-                e_a = 0;
-                e_b = 0;
-                e_theta = 0;
-              }
-          
               da = dist * cos(theta);
               db = dist * sin(theta); 
 
@@ -288,6 +282,7 @@ int main(int argc, char **argv)
                 }
              else{
                initial = 1;
+               iter2 = 0;
                iter3 = 0;
                iter4 = 0;
 
@@ -334,15 +329,12 @@ int main(int argc, char **argv)
               if(iter1 == 1){
                     a = a + cos(theta)*e_a - sin(theta)*e_b;
                     b = b + sin(theta)*e_a + cos(theta)*e_b;
-                    e_a = 0;
-                    e_b = 0;
                  }
           
               pose.pose.position.z = 0.9; 
              }
             else if(error_vars.mode == -2){ // error tack end -> update position, make error parameter 0 to use again
             initial = 1;
-            a = 1;
  
               iter = iter + 1;
 
@@ -408,7 +400,7 @@ int main(int argc, char **argv)
               pose.pose.orientation.z = q_z;
               pose.pose.orientation.w = q_w;
 
-              if (iter3 == 30){
+              if (iter3 == 20){
                 theta_add =  pi/2;
                 theta = theta + theta_add;
               }

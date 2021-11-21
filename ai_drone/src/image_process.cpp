@@ -158,11 +158,13 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
  
             // theta change to -pi to pi
 
-             if (lines[0][1] >= 0 && lines[0][1] <= 3.14159){
+             if (lines[0][1] >= 0 && lines[0][1] <= 3.14159/9){
                  theta_arr = lines[0][1];    
                 }
-             else if(lines[0][1] > 3.14159 && lines[0][1]<= 2*3.14159){
-                 theta_arr = lines[0][1]-2*3.14159;
+             else if(lines[0][1] > 8 * 3.14159 && lines[0][1]<= 3.14159){
+                 theta_arr = lines[0][1]-3.14159;
+                }else{
+                 theta_arr = 0;
                 }
               
               theta_avg = theta_arr;
@@ -176,22 +178,26 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
              }
            else if(lines.size() > 1){
 
-               if (lines[0][1] >= 0 && lines[0][1] <= 3.14159/2){
+               if (lines[0][1] >= 0 && lines[0][1] <= 3.14159/9){
                  theta_avg = lines[0][1];    
                 }
-               else if(lines[0][1] > 3.14159/2 && lines[0][1]<= 3.14159){
+               else if(lines[0][1] > 8 * 3.14159/9 && lines[0][1]<= 3.14159){
                  theta_avg = lines[0][1]-3.14159;
+                }else{
+                 theta_avg = 0;
                 }
 
               rho_avg = abs(lines[0][0]);
            
               for(size_t k = 1 ; k < lines.size(); k++){
 
-                 if (lines[k][1] >= 0 && lines[k][1] <= 3.14159/2){
+                 if (lines[k][1] >= 0 && lines[k][1] <= 3.14159/9){
                  theta_arr = lines[k][1];    
                 }
-                 else if(lines[k][1] > 3.14159/2 && lines[k][1]<= 3.14159){
+                 else if(lines[k][1] > 8 * 3.14159/9 && lines[k][1]<= 3.14159){
                  theta_arr = lines[k][1]-3.14159;
+                }else{
+                 theta_arr = theta_arr;
                 }
                 
                 theta_avg = (theta_avg + theta_arr)/2;
@@ -205,8 +211,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
               theta_avg = 0;
            }
 
-             x = (d + 20) * sin(theta_e);
-             y = (d + 20) * cos(theta_e);
+             x = (d) * sin(theta_e);
+             y = (d) * cos(theta_e);
              x_s = 1;
              y_s = 1;
              mode = 2; 
@@ -219,7 +225,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
            iter = iter +1;
        
-           if(iter >= 60){
+           if(iter >= 40){
             mode = -3;
            }else{
             mode = 3;
