@@ -51,11 +51,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     img.copyTo(img_houghC);
 	
     vector<Vec3f> circles;
-    HoughCircles(blur_img, circles, CV_HOUGH_GRADIENT, 1, 30, 130, 50, 0, 100);
+    HoughCircles(blur_img, circles, CV_HOUGH_GRADIENT, 1, 30, 120, 50, 0, 0);
 
     //line detection
     vector<Vec2f> lines;
-    HoughLines(canny_img, lines, 1, CV_PI / 180, 100);
+    HoughLines(canny_img, lines, 1, CV_PI / 180, 95);
 
     // circle center detection and move drone to center -> mode 1
     // circle center dectection and land -> mode5
@@ -70,53 +70,48 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 	    circle(img_houghC, center, 2, Scalar (255, 0, 0), 3);
           
         // detect one circle -> spwan to start
-
-        if(circles.size() == 1){
        
          // y error data
-   	   if (fabs(c[0] - 160.0)<8){
-    		y_s=0; // error under 8 
+   	   if (fabs(c[0] - 160.0)<15){
+    		y_s=0; // error under 15 
   	    }
    	   else { 
-    	  	y_s=1; // error over 8 
+    	  	y_s=1; // error over 15 
     	    }
         
             y = - c[0] + 160 ; // y error save
        
          // x error data
-   	   if (fabs(c[1] - 120.0)<8){
-    	  	x_s=0; // error under 8
+   	   if (fabs(c[1] - 120.0)<15){
+    	  	x_s=0; // error under 15
     	    }
     	   else { 
-       		x_s=1; // error over 8 
+       		x_s=1; // error over 15
             }
          
             x = - c[1] + 120; // x error save
 
          //mode setting
            if(x_s ==0 && y_s==0){ // x_s =0 and y_s =0 for certain time -> alt down to 0.9m
-           iter = iter +1;
-           }
-           else{
-           iter =0;
-           }
+             iter = iter +1;
+             }
+             else{
+             iter =0;
+             }
        
-           if(iter >= 50){
-            mode = -1;
-           }else{
-            mode = 1;
-           }
-        
-        }else if(circles.size() >= 2){
-          // mode 5 landing ; break to ignore situation for one circle detection
-        }
+             if(iter >= 40){
+                  mode = -1;            
+               }
+             else{
+                  mode = 1;
+             }        
 
-        char status_x[30];
-        sprintf(status_x, "x = %d , x_s = %d",x,x_s);
-        char status_y[30];
-        sprintf(status_y, "y = %d , y_s = %d",y,y_s);
-        char status_mode[30];
-        sprintf(status_mode, "mode = %d",mode);
+          char status_x[30];
+          sprintf(status_x, "x = %d , x_s = %d",x,x_s);
+          char status_y[30];
+          sprintf(status_y, "y = %d , y_s = %d",y,y_s);
+          char status_mode[30];
+          sprintf(status_mode, "mode = %d",mode);
 
         //show variable status at cam
         putText(img_houghC, status_mode , Point(20,190) ,1,1, Scalar(0,0,0), 1,8);
@@ -148,6 +143,9 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
            for(size_t k =0 ; k < lines.size(); k++){
              if (lines[k][1] >= 1.39626 && lines[k][1] <= 1.74533){
                  paral = paral + 1;
+                }
+             else if(lines[k][1] >= 0 && lines[k][1] <= 15 * 3.14159/180 || lines[k][1] > 175 * 3.14159/ 180 && lines[k][1]<= 3.14159 ){
+                 vert = vert + 1;
                 }
              }
 
@@ -210,7 +208,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
               rho_avg = 0;
               theta_avg = 0;
            }
-
              x = (d) * sin(theta_e);
              y = (d) * cos(theta_e);
              x_s = 1;
@@ -222,18 +219,20 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
            }
          // paral =! 0 -> if detect parallel lines -> stop -> wait for mode -3
          else if(paral > 0){ 
-
-           iter = iter +1;
+          if(vert == 0){
+             iter = iter +1;
        
-           if(iter >= 40){
-            mode = -3;
-           }else{
-            mode = 3;
+             if(iter >= 15){
+               mode = -3;
+             }
+            }
+          else{  
+             mode = 3;
+             iter = 0;
+             vert = 0;
+             paral = 0;
+            }
            }
-
-           vert = 0;
-           paral = 0;
-         }
     
             char status_theta[30];
             sprintf(status_theta, "theta_e = %.3f",theta_e*180/3.14159);
@@ -246,7 +245,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
             putText(img_houghC, status_mode , Point(20,190) ,1,1, Scalar(0,0,0), 1,8);
             putText(img_houghC, status_theta , Point(20,210) ,1,1, Scalar(0,0,0), 1,8);
             putText(img_houghC, status_d , Point(20,230) ,1,1, Scalar(0,0,0), 1,8);
-  
             } 
          }
        }
@@ -274,6 +272,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
    error_data_pub.publish(error);
    
     imshow("view", img_houghC);
+   // imshow("canny_view", canny_img);
+   // imshow("blur_view", blur_img);
     cv::waitKey(20);
   }
   catch (cv_bridge::Exception& e)
@@ -288,6 +288,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "image_process");
   ros::NodeHandle nh;
   cv::namedWindow("view");
+  //cv::namedWindow("canny_view");
+  //cv::namedWindow("blur_view");
 
   ros::Publisher error_data_pub = nh.advertise<ai_drone::error_data>("error_data_msg",30);
   

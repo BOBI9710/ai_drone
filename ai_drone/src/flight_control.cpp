@@ -75,6 +75,8 @@ int main(int argc, char **argv)
     int iter2 = 0;
     int iter3 = 0;
     int iter4 = 0;
+    int iter_e = 0;
+    int iter_the = 0;
     double theta = 0;
     double phi = 0;
     double rot_alpha = 0;
@@ -84,7 +86,7 @@ int main(int argc, char **argv)
     double dist = 0;
     const double pi = 3.14159265359;
     int mode = 0;
-    int c = 0;
+    int c,d,e = 0;
 
     ros::init(argc, argv, "flight_example_node");
     ros::NodeHandle nh;
@@ -179,25 +181,40 @@ int main(int argc, char **argv)
                 pose.pose.orientation.w = q_w;
               }
 
+            //pi update
             if(theta >= 2*pi){
                 theta = theta - 2*pi;
               }
+           
+            if(iter_the == 4){
+                d = 1;
+              } 
+           
+            // landing
+            if(e == 1){ 
+              break;
+             }
 
-            // mode1 (spawn -> start)            
+            // mode1 (spawn -> start) // landing            
             if (error_vars.mode == 1){            
               initial = 1;
               iter = 0;
               iter1 = 0;
               dist = 0;
 
-              e_a = error_vars.x_data*K_P + (error_vars.x_data - x_data_old) * K_D/0.02 + K_I*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
-              e_b = error_vars.y_data*K_P + (error_vars.y_data - y_data_old) * K_D/0.02 + K_I*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+              if (d ==1){ //landing
+                 e_a = error_vars.x_data*0.001 + (error_vars.x_data - x_data_old) * 0.0003/0.02 + 0.005*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
+                 e_b = error_vars.y_data*0.001 + (error_vars.y_data - y_data_old) * 0.0003/0.02 + 0.005*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+              }else{ // start
+                 e_a = error_vars.x_data*K_P + (error_vars.x_data - x_data_old) * K_D/0.02 + K_I*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
+                 e_b = error_vars.y_data*K_P + (error_vars.y_data - y_data_old) * K_D/0.02 + K_I*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);  
+              }
 
               if(c == 1){
                 e_a = 0;
                 e_b = 0;
               }
-
+            
               da = dist * cos(theta);
               db = dist * sin(theta); 
 
@@ -222,9 +239,9 @@ int main(int argc, char **argv)
             
               iter2 = iter2 + 1;
 
-              e_a = error_vars.x_data*0.001 + (error_vars.x_data - x_data_old) * 0.00004/0.02 + 0.003*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
-              e_b = error_vars.y_data*0.001 + (error_vars.y_data - y_data_old) * 0.00004/0.02 + 0.003*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
-              e_theta = -(error_vars.theta_data*0.06 + (error_vars.theta_data - theta_data_old) * 0.002/0.02 + 0.08*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
+              e_a = error_vars.x_data*0.0015 + (error_vars.x_data - x_data_old) * 0.00025/0.02 + 0.004*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
+              e_b = error_vars.y_data*0.0015 + (error_vars.y_data - y_data_old) * 0.00025/0.02 + 0.004*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+              e_theta = -(error_vars.theta_data*0.15 + (error_vars.theta_data - theta_data_old) * 0.005/0.02 + 0.15*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
 
               da = dist * cos(theta);
               db = dist * sin(theta); 
@@ -254,31 +271,43 @@ int main(int argc, char **argv)
               d_error_old_theta = (error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta;
 
              if(iter2 >= 5){
-                dist = 0.01;
+                dist = 0.015;
               }
 
                 if(frontm.mode4 == 4){ // meet obstacle -> go up to 2m and go down
                     iter4 = iter4 + 1;
  
-                  if(iter4 >= 1 && iter4 < 10){
+                   if(iter4 >= 1 && iter4 < 15){
                        dist = 0;
                      }
-                   else if(iter4 >= 10){
-                       pose.pose.position.z = 2; 
+                   else if(iter4 >= 15){
+                       pose.pose.position.z = 2.5; 
                      }
                    if(iter4 >= 20){
-                       dist = 0.01;
+                       dist = 0.02;
                      }
-                   if(iter4 >= 350){
+                   if(iter4 >= 150){
                        pose.pose.position.z = 0.9; 
-                       dist = 0;
                      }
-                 } 
+               }
+               else{
+                  pose.pose.position.z = 0.9;
+               } 
             }
             else if(error_vars.mode == 3){
              c = 0;
              if(frontm.mode4 == 4){
-                
+           
+                da = dist * cos(theta);
+                db = dist * sin(theta); 
+
+                a = a + da;
+                b = b + db; 
+
+                pose.pose.position.x = a;
+                pose.pose.position.y = b;  
+
+                dist = 0.015;
                 }
              else{
                initial = 1;
@@ -314,7 +343,7 @@ int main(int argc, char **argv)
                 pose.pose.orientation.z = q_z;
                 pose.pose.orientation.w = q_w;
 
-              if (iter >= 5){
+              if (iter >= 3){
                  dist = 0.01;
                  }
                }
@@ -330,8 +359,18 @@ int main(int argc, char **argv)
                     a = a + cos(theta)*e_a - sin(theta)*e_b;
                     b = b + sin(theta)*e_a + cos(theta)*e_b;
                  }
-          
-              pose.pose.position.z = 0.9; 
+                if(d == 1){ //landing
+ 
+                 iter_e = iter_e + 1;
+                 pose.pose.position.z = 0;
+
+                  if(iter_e >= 10){
+                    e = 1;
+                  }
+                }
+                else{
+                 pose.pose.position.z = 0.9;
+                } 
              }
             else if(error_vars.mode == -2){ // error tack end -> update position, make error parameter 0 to use again
             initial = 1;
@@ -343,7 +382,7 @@ int main(int argc, char **argv)
                e_b = 0;
                dist = 0;
               }
-              if(iter >= 30){
+              if(iter >= 20){
 
                da = dist * cos(theta);
                db = dist * sin(theta);
@@ -361,10 +400,14 @@ int main(int argc, char **argv)
 
              }
  
-             if(iter >= 40){
-                dist = 0.01;
-             }
-                            
+             if(iter >= 30){
+                if(d == 1){
+                  dist = 0.002;
+                 }
+                else{
+                  dist = 0.015;
+                 }
+               }                          
             } 
             else if(error_vars.mode == -3){
             initial = 1;
@@ -382,7 +425,6 @@ int main(int argc, char **argv)
                da = 0;
                db = 0;
                dist = 0;
-
               }
 
               theta_add = 0;  
@@ -400,12 +442,13 @@ int main(int argc, char **argv)
               pose.pose.orientation.z = q_z;
               pose.pose.orientation.w = q_w;
 
-              if (iter3 == 20){
+              if (iter3 == 5){
                 theta_add =  pi/2;
                 theta = theta + theta_add;
+                iter_the = iter_the + 1;
               }
-              else if (iter3 >= 50){
-                dist = 0.01;  
+              else if (iter3 >= 40){
+                dist = 0.007;  
               }
 
             }  

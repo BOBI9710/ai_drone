@@ -82,13 +82,13 @@ double rot_beta_x, rot_beta_y, rot_beta_z = 0;
             }
         }
 
-            theta = 90 * 3.14159/180;
+            theta = 0 * 3.14159/180;
             rot_beta_x = 3.14159/2;
             rot_beta_y = 3.14159/2;
             rot_beta_z = 0;
     	   
-            pose.pose.position.x = 9;
-    	    pose.pose.position.y = 4;
+            pose.pose.position.x = 6;
+    	    pose.pose.position.y = 5;
             pose.pose.position.z = 0.9;
 
             q_x = sin(theta/2.0)*cos(rot_beta_x);     

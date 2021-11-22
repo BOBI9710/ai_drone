@@ -48,15 +48,15 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     img.copyTo(img_houghC);
 
     //show roi area
-    rectangle(img_houghC, Rect(30, 0, 120, 110), Scalar(0, 0, 0), 1, 8, 0);
-    rectangle(img_houghC, Rect(170, 0, 120, 110), Scalar(0, 0, 0), 1, 8, 0);
+    rectangle(img_houghC, Rect(30, 0, 120, 120), Scalar(0, 0, 0), 1, 8, 0);
+    rectangle(img_houghC, Rect(170, 0, 120, 120), Scalar(0, 0, 0), 1, 8, 0);
 
     //roi
     Mat img_roi_1, img_roi_2, mask_img;
     canny_img.copyTo(mask_img);
    
-    img_roi_1 = mask_img(Rect(30, 0, 120, 110));
-    img_roi_2 = mask_img(Rect(170, 0, 120, 110));
+    img_roi_1 = mask_img(Rect(30, 0, 120, 120));
+    img_roi_2 = mask_img(Rect(170, 0, 120, 120));
 
     //line detection
     vector<Vec2f> lines_1;
@@ -76,7 +76,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         mode = 4;        
         iter = iter + 1;
 
-        if(iter >= 150){
+        if(iter >= 65){
           mode = 0;
           a = 0;     
            }
@@ -90,7 +90,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
                 }
              }
         if(lines_1.size() > 0){
-           rectangle(img_houghC, Rect(30, 0, 120, 110), Scalar(0, 0, 255), 2.5, 8, 0);
+           rectangle(img_houghC, Rect(30, 0, 120, 120), Scalar(0, 0, 255), 2.5, 8, 0);
           }
        
 
@@ -102,7 +102,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
                 }
              }
         if(lines_2.size() > 0){
-           rectangle(img_houghC, Rect(170, 0, 120, 110), Scalar(0, 0, 255), 2.5, 8, 0);
+           rectangle(img_houghC, Rect(170, 0, 120, 120), Scalar(0, 0, 255), 2.5, 8, 0);
           }      
 
         if( vert1 > 0 && vert2 > 0 ){
@@ -116,8 +116,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
          }
 
       if(mode == 4){
-       rectangle(img_houghC, Rect(30, 0, 120, 110), Scalar(255, 0, 0), 2.5, 8, 0);
-       rectangle(img_houghC, Rect(170, 0, 120, 110), Scalar(255, 0, 0), 2.5, 8, 0);
+       rectangle(img_houghC, Rect(30, 0, 120, 120), Scalar(255, 0, 0), 2.5, 8, 0);
+       rectangle(img_houghC, Rect(170, 0, 120, 120), Scalar(255, 0, 0), 2.5, 8, 0);
    
        }
 
