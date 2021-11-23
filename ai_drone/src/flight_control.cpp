@@ -186,7 +186,7 @@ int main(int argc, char **argv)
                 theta = theta - 2*pi;
               }
            
-            if(iter_the == 12){
+            if(iter_the == 4){
                 d = 1;
               } 
            
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
               if (d ==1){ //landing
                  e_a = error_vars.x_data*0.001 + (error_vars.x_data - x_data_old) * 0.0003/0.02 + 0.005*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
                  e_b = error_vars.y_data*0.001 + (error_vars.y_data - y_data_old) * 0.0003/0.02 + 0.005*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
-                 pose.pose.position.z = 2;
+                 pose.pose.position.z = 1.5;
               }else{ // start
                  e_a = error_vars.x_data*K_P + (error_vars.x_data - x_data_old) * K_D/0.02 + K_I*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
                  e_b = error_vars.y_data*K_P + (error_vars.y_data - y_data_old) * K_D/0.02 + K_I*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);  
@@ -452,8 +452,8 @@ int main(int argc, char **argv)
               pose.pose.orientation.z = q_z;
               pose.pose.orientation.w = q_w;
 
-              if (iter3 >= 4 && iter3 <= 6){
-                theta_add =  pi/6;
+              if (iter3 == 3){
+                theta_add =  pi/2;
                 theta = theta + theta_add;
                 iter_the = iter_the + 1;
               }
