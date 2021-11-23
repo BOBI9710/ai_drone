@@ -51,7 +51,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     img.copyTo(img_houghC);
 	
     vector<Vec3f> circles;
-    HoughCircles(blur_img, circles, CV_HOUGH_GRADIENT, 1, 30, 120, 50, 0, 0);
+    HoughCircles(blur_img, circles, CV_HOUGH_GRADIENT, 1, 30, 120, 50, 0, 110);
 
     //line detection
     vector<Vec2f> lines;
@@ -72,21 +72,21 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // detect one circle -> spwan to start
        
          // y error data
-   	   if (fabs(c[0] - 160.0)<15){
-    		y_s=0; // error under 15 
+   	   if (fabs(c[0] - 160.0)<10){
+    		y_s=0; // error under 10 
   	    }
    	   else { 
-    	  	y_s=1; // error over 15 
+    	  	y_s=1; // error over 10 
     	    }
         
             y = - c[0] + 160 ; // y error save
        
          // x error data
-   	   if (fabs(c[1] - 120.0)<15){
-    	  	x_s=0; // error under 15
+   	   if (fabs(c[1] - 120.0)<10){
+    	  	x_s=0; // error under 10
     	    }
     	   else { 
-       		x_s=1; // error over 15
+       		x_s=1; // error over 10
             }
          
             x = - c[1] + 120; // x error save

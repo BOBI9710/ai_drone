@@ -76,7 +76,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         mode = 4;        
         iter = iter + 1;
 
-        if(iter >= 65){
+        if(iter >= 55){
           mode = 0;
           a = 0;     
            }

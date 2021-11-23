@@ -186,7 +186,7 @@ int main(int argc, char **argv)
                 theta = theta - 2*pi;
               }
            
-            if(iter_the == 4){
+            if(iter_the == 12){
                 d = 1;
               } 
            
@@ -205,6 +205,7 @@ int main(int argc, char **argv)
               if (d ==1){ //landing
                  e_a = error_vars.x_data*0.001 + (error_vars.x_data - x_data_old) * 0.0003/0.02 + 0.005*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
                  e_b = error_vars.y_data*0.001 + (error_vars.y_data - y_data_old) * 0.0003/0.02 + 0.005*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+                 pose.pose.position.z = 2;
               }else{ // start
                  e_a = error_vars.x_data*K_P + (error_vars.x_data - x_data_old) * K_D/0.02 + K_I*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
                  e_b = error_vars.y_data*K_P + (error_vars.y_data - y_data_old) * K_D/0.02 + K_I*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);  
@@ -239,8 +240,15 @@ int main(int argc, char **argv)
             
               iter2 = iter2 + 1;
 
-              e_a = error_vars.x_data*0.0015 + (error_vars.x_data - x_data_old) * 0.00025/0.02 + 0.004*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
-              e_b = error_vars.y_data*0.0015 + (error_vars.y_data - y_data_old) * 0.00025/0.02 + 0.004*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+                if(frontm.mode4 == 4){ // turbulance reduce
+                  e_a = 0.4 * (error_vars.x_data*0.0015 + (error_vars.x_data - x_data_old) * 0.00025/0.02 + 0.004*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x));
+                  e_b = 0.4 * (error_vars.y_data*0.0015 + (error_vars.y_data - y_data_old) * 0.00025/0.02 + 0.004*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y));
+                }
+                else{
+                  e_a = error_vars.x_data*0.0015 + (error_vars.x_data - x_data_old) * 0.00025/0.02 + 0.004*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
+                  e_b = error_vars.y_data*0.0015 + (error_vars.y_data - y_data_old) * 0.00025/0.02 + 0.004*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+                }
+
               e_theta = -(error_vars.theta_data*0.15 + (error_vars.theta_data - theta_data_old) * 0.005/0.02 + 0.15*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
 
               da = dist * cos(theta);
@@ -344,7 +352,7 @@ int main(int argc, char **argv)
                 pose.pose.orientation.w = q_w;
 
               if (iter >= 3){
-                 dist = 0.01;
+                 dist = 0.007;
                  }
                }
              }
@@ -362,9 +370,9 @@ int main(int argc, char **argv)
                 if(d == 1){ //landing
  
                  iter_e = iter_e + 1;
-                 pose.pose.position.z = 0;
+                 pose.pose.position.z = 2 - iter1 * 0.1;
 
-                  if(iter_e >= 10){
+                  if(iter_e >= 25){
                     e = 1;
                   }
                 }
@@ -407,6 +415,9 @@ int main(int argc, char **argv)
                 else{
                   dist = 0.015;
                  }
+               }
+             if(iter >= 50 && d == 1){
+                pose.pose.position.z = 0.9 + (iter-50) * 0.005 ;
                }                          
             } 
             else if(error_vars.mode == -3){
@@ -424,7 +435,6 @@ int main(int argc, char **argv)
                e_b = 0;
                da = 0;
                db = 0;
-               dist = 0;
               }
 
               theta_add = 0;  
@@ -442,8 +452,8 @@ int main(int argc, char **argv)
               pose.pose.orientation.z = q_z;
               pose.pose.orientation.w = q_w;
 
-              if (iter3 == 5){
-                theta_add =  pi/2;
+              if (iter3 >= 4 && iter3 <= 6){
+                theta_add =  pi/6;
                 theta = theta + theta_add;
                 iter_the = iter_the + 1;
               }
