@@ -144,7 +144,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
              if (lines[k][1] >= 1.39626 && lines[k][1] <= 1.74533){
                  paral = paral + 1;
                 }
-             else if(lines[k][1] >= 0 && lines[k][1] <= 15 * 3.14159/180 || lines[k][1] > 175 * 3.14159/ 180 && lines[k][1]<= 3.14159 ){
+             else if(lines[k][1] >= 0 && lines[k][1] <= 15 * 3.14159/180 || lines[k][1] > 165 * 3.14159/ 180 && lines[k][1]<= 3.14159 ){
                  vert = vert + 1;
                 }
              }
