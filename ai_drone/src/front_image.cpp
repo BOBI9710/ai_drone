@@ -55,14 +55,14 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     Mat img_roi_1, img_roi_2, mask_img;
     canny_img.copyTo(mask_img);
    
-    img_roi_1 = mask_img(Rect(30, 0, 130, 120));
-    img_roi_2 = mask_img(Rect(160, 0, 130, 120));
+    img_roi_1 = mask_img(Rect(30, 0, 140, 120));
+    img_roi_2 = mask_img(Rect(150, 0, 140, 120));
 
     //line detection
     vector<Vec2f> lines_1;
     vector<Vec2f> lines_2;
-    HoughLines(img_roi_1, lines_1, 1, CV_PI / 180, 100);
-    HoughLines(img_roi_2, lines_2, 1, CV_PI / 180, 100);
+    HoughLines(img_roi_1, lines_1, 1, CV_PI / 180, 95);
+    HoughLines(img_roi_2, lines_2, 1, CV_PI / 180, 95);
 
      // if detect line -> avoidance -> mode4
         //lines 1

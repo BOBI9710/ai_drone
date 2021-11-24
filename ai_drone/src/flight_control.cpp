@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     int iter2 = 0;
     int iter3 = 0;
     int iter4 = 0;
-    int iter_e = 0;
+    int iter_f = 0;
     int iter_the = 0;
     double theta = 0;
     double phi = 0;
@@ -84,9 +84,10 @@ int main(int argc, char **argv)
     double q_x,q_y,q_z,q_w = 0;
     double theta_add =0;
     double dist = 0;
+    double dist3 = 0;
     const double pi = 3.14159265359;
     int mode = 0;
-    int c,d,e = 0;
+    int c,d,e,f = 0;
 
     ros::init(argc, argv, "flight_example_node");
     ros::NodeHandle nh;
@@ -118,7 +119,7 @@ int main(int argc, char **argv)
     geometry_msgs::PoseStamped pose;
     pose.pose.position.x = 0;
     pose.pose.position.y = 0;
-    pose.pose.position.z = 2;
+    pose.pose.position.z = 0.1;
 
     //send a few setpoints before starting
     for(int i = 100; ros::ok() && i > 0; --i){
@@ -191,7 +192,7 @@ int main(int argc, char **argv)
               } 
            
             // landing
-            if(e == 1){ 
+            if(f == 1){ 
               break;
              }
 
@@ -203,8 +204,8 @@ int main(int argc, char **argv)
               dist = 0;
 
               if (d ==1){ //landing
-                 e_a = error_vars.x_data*0.001 + (error_vars.x_data - x_data_old) * 0.0003/0.02 + 0.005*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
-                 e_b = error_vars.y_data*0.001 + (error_vars.y_data - y_data_old) * 0.0003/0.02 + 0.005*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
+                 e_a = error_vars.x_data*0.0005 + (error_vars.x_data - x_data_old) * 0.0003/0.02 + 0.005*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
+                 e_b = error_vars.y_data*0.0005 + (error_vars.y_data - y_data_old) * 0.0003/0.02 + 0.005*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
                  pose.pose.position.z = 1.5;
               }else{ // start
                  e_a = error_vars.x_data*K_P + (error_vars.x_data - x_data_old) * K_D/0.02 + K_I*((error_vars.x_data + x_data_old)*0.02*0.5 + d_error_old_x);
@@ -249,7 +250,7 @@ int main(int argc, char **argv)
                   e_b = error_vars.y_data*0.0015 + (error_vars.y_data - y_data_old) * 0.00025/0.02 + 0.004*((error_vars.y_data + y_data_old)*0.02*0.5 + d_error_old_y);
                 }
 
-              e_theta = -(error_vars.theta_data*0.15 + (error_vars.theta_data - theta_data_old) * 0.005/0.02 + 0.15*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
+              e_theta = -(error_vars.theta_data*0.2 + (error_vars.theta_data - theta_data_old) * 0.01/0.02 + 0.17*((error_vars.theta_data + theta_data_old)*0.02*0.5 + d_error_old_theta));
 
               da = dist * cos(theta);
               db = dist * sin(theta); 
@@ -325,8 +326,8 @@ int main(int argc, char **argv)
 
                iter = iter + 1;
 
-               da = da + dist * -sin(theta);
-               db = db + dist * cos(theta);
+               da = da + dist * -sin(theta) + dist3 * cos(theta);
+               db = db + dist * cos(theta) + dist3 * sin(theta); 
  
                if (iter == 1){
                  a = a + da;
@@ -336,6 +337,11 @@ int main(int argc, char **argv)
                  da = 0;
                  db = 0;
                  dist = 0;
+                }
+                if (iter >= 1 && iter <= 17 ){
+                 dist3 = 0.01;
+                }else{
+                 dist3 = 0;
                 }
 
                 pose.pose.position.x = a + da;
@@ -352,7 +358,7 @@ int main(int argc, char **argv)
                 pose.pose.orientation.w = q_w;
 
               if (iter >= 3){
-                 dist = 0.007;
+                 dist = 0.005;
                  }
                }
              }
@@ -369,19 +375,15 @@ int main(int argc, char **argv)
                  }
                 if(d == 1){ //landing
  
-                 iter_e = iter_e + 1;
-                 pose.pose.position.z = 2 - iter1 * 0.1;
-
-                  if(iter_e >= 25){
-                    e = 1;
-                  }
+                 pose.pose.position.z = 0.1;
+                 e = 1;
                 }
                 else{
                  pose.pose.position.z = 0.9;
                 } 
              }
             else if(error_vars.mode == -2){ // error tack end -> update position, make error parameter 0 to use again
-            initial = 1;
+              initial = 1;
  
               iter = iter + 1;
 
@@ -410,13 +412,23 @@ int main(int argc, char **argv)
  
              if(iter >= 30){
                 if(d == 1){
-                  dist = 0.002;
+                  dist = 0.005;
                  }
                 else{
                   dist = 0.015;
                  }
                }
-             if(iter >= 50 && d == 1){
+             if( e == 1 ){
+                pose.pose.position.z = 0.1;
+                dist = 0;
+
+                 iter_f = iter_f + 1;
+
+                  if(iter_f >= 40){
+                    f = 1;
+                  }
+               }
+             else if(iter >= 50 && d == 1 && e != 1){
                 pose.pose.position.z = 0.9 + (iter-50) * 0.005 ;
                }                          
             } 
@@ -452,17 +464,17 @@ int main(int argc, char **argv)
               pose.pose.orientation.z = q_z;
               pose.pose.orientation.w = q_w;
 
-              if (iter3 == 3){
+              if (iter3 == 2){
                 theta_add =  pi/2;
                 theta = theta + theta_add;
                 iter_the = iter_the + 1;
               }
               else if (iter3 >= 40){
-                dist = 0.007;  
+                dist = 0.005;  
               }
 
             }  
-            else{ //mode=default;
+            else{ 
                     
             }
   

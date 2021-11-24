@@ -55,7 +55,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     //line detection
     vector<Vec2f> lines;
-    HoughLines(canny_img, lines, 1, CV_PI / 180, 95);
+    HoughLines(canny_img, lines, 1, CV_PI / 180, 90);
 
     // circle center detection and move drone to center -> mode 1
     // circle center dectection and land -> mode5
@@ -157,16 +157,19 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
             // theta change to -pi to pi
 
              if (lines[0][1] >= 0 && lines[0][1] <= 3.14159/9){
-                 theta_arr = lines[0][1];    
+                 theta_arr = lines[0][1]; 
+                 rho_avg = abs(lines[0][0]);   
                 }
              else if(lines[0][1] > 8 * 3.14159 && lines[0][1]<= 3.14159){
                  theta_arr = lines[0][1]-3.14159;
-                }else{
+                 rho_avg = abs(lines[0][0]);
+                }
+             else{
                  theta_arr = 0;
+                 rho_avg = 0;
                 }
               
               theta_avg = theta_arr;
-              rho_avg = lines[0][0];
  
               theta_e = theta_avg; //theta error save
               d = floor(160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg) / sqrt(1+pow(tan(theta_avg),2))); // d error save
@@ -177,29 +180,34 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
            else if(lines.size() > 1){
 
                if (lines[0][1] >= 0 && lines[0][1] <= 3.14159/9){
-                 theta_avg = lines[0][1];    
+                 theta_avg = lines[0][1];
+                 rho_avg = abs(lines[0][0]);    
                 }
                else if(lines[0][1] > 8 * 3.14159/9 && lines[0][1]<= 3.14159){
                  theta_avg = lines[0][1]-3.14159;
-                }else{
-                 theta_avg = 0;
+                 rho_avg = abs(lines[0][0]);
                 }
-
-              rho_avg = abs(lines[0][0]);
+               else{
+                 theta_avg = 0;
+                 rho_avg = 0;
+                }
            
               for(size_t k = 1 ; k < lines.size(); k++){
 
                  if (lines[k][1] >= 0 && lines[k][1] <= 3.14159/9){
-                 theta_arr = lines[k][1];    
+                 theta_arr = lines[k][1];
+                 rho_avg = (rho_avg + abs(lines[k][0]))/2;    
                 }
                  else if(lines[k][1] > 8 * 3.14159/9 && lines[k][1]<= 3.14159){
                  theta_arr = lines[k][1]-3.14159;
-                }else{
+                 rho_avg = (rho_avg + abs(lines[k][0]))/2;
+                }
+                 else{
                  theta_arr = theta_arr;
+                 rho_avg = rho_avg;
                 }
                 
                 theta_avg = (theta_avg + theta_arr)/2;
-                rho_avg = (rho_avg + abs(lines[k][0]))/2;
                 }
 
               theta_e = theta_avg; //theta error save
@@ -218,7 +226,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
              iter = 0;
            }
          // paral =! 0 -> if detect parallel lines -> stop -> wait for mode -3
-         else if(paral > 0){ 
+         else if(paral > 0){
+
           if(vert == 0){
              iter = iter +1;
        
@@ -259,7 +268,9 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
          }
 
     //show camera center 
-    circle(img_houghC, Point(160, 120),10, Scalar (255, 0, 255),2 );
+    circle(img_houghC, Point(160, 120),15, Scalar (255, 0, 255),2 );
+    line(img_houghC, Point(150,120), Point(170,120), Scalar(255,0,255), 2, 8);
+    line(img_houghC, Point(160,110), Point(160,130), Scalar(255,0,255), 2, 8);
     
    // publish message to flight_control node
    error.mode_data = mode;
