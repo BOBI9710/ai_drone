@@ -61,8 +61,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     //line detection
     vector<Vec2f> lines_1;
     vector<Vec2f> lines_2;
-    HoughLines(img_roi_1, lines_1, 1, CV_PI / 180, 95);
-    HoughLines(img_roi_2, lines_2, 1, CV_PI / 180, 95);
+    HoughLines(img_roi_1, lines_1, 1, CV_PI / 180, 90);
+    HoughLines(img_roi_2, lines_2, 1, CV_PI / 180, 90);
 
      // if detect line -> avoidance -> mode4
         //lines 1

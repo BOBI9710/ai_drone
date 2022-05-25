@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     int mode = 0;
     int c,d,e,f = 0;
 
-    ros::init(argc, argv, "flight_example_node");
+    ros::init(argc, argv, "flight_control_node");
     ros::NodeHandle nh;
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
@@ -295,7 +295,7 @@ int main(int argc, char **argv)
                    if(iter4 >= 20){
                        dist = 0.02;
                      }
-                   if(iter4 >= 150){
+                   if(iter4 >= 170){
                        pose.pose.position.z = 0.9; 
                      }
                }

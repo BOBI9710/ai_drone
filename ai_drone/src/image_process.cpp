@@ -172,7 +172,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
               theta_avg = theta_arr;
  
               theta_e = theta_avg; //theta error save
-              d = floor(160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg) / sqrt(1+pow(tan(theta_avg),2))); // d error save
+              //d = floor((160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg)) / sqrt(1+pow(tan(theta_avg),2))); // d error save
+              d = floor(160 * cos(theta_avg) + 120 * sin(theta_avg) - rho_avg);
 
               rho_avg = 0;
               theta_avg = 0;
@@ -211,7 +212,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
                 }
 
               theta_e = theta_avg; //theta error save
-              d = floor(160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg) / sqrt(1+pow(tan(theta_avg),2))); // d error save
+              //d = floor((160 + tan(theta_avg)*120 - tan(theta_avg)*rho_avg*sin(theta_avg) - rho_avg*cos(theta_avg)) / sqrt(1+pow(tan(theta_avg),2))); // d error save
+              d = floor(160 * cos(theta_avg) + 120 * sin(theta_avg) - rho_avg);
 
               rho_avg = 0;
               theta_avg = 0;
