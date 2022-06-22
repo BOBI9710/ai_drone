@@ -1,0 +1,4 @@
+offboard mode 
+waypoint 
+
+square 2m
